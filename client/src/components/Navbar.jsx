@@ -16,7 +16,7 @@ function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-4">
           <Link to="/" className="text-2xl font-bold text-blue-400">
-            🎬 Indian Movies
+            PreCON - Movie Recommender
           </Link>
           
           <div className="flex gap-6 items-center">

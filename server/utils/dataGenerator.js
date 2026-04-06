@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Rating = require('../models/Rating');
 const Movie = require('../models/Movie');
+const { invalidateRecommendationCache } = require('../services/recommendationCache');
 
 const genres = ['Action', 'Drama', 'Comedy', 'Thriller', 'Romance', 'Horror', 'Crime', 'Family'];
 const languages = ['hi', 'ta', 'te', 'ml'];
@@ -156,6 +157,7 @@ const initializeData = async () => {
       
       movieCount = await Movie.countDocuments();
       console.log(`✅ Total movies now in database: ${movieCount}\n`);
+      invalidateRecommendationCache();
     } else {
       console.log(`✅ Movies already exist in database\n`);
     }
@@ -171,6 +173,7 @@ const initializeData = async () => {
     await generateRatings();
     const ratingCount = await Rating.countDocuments();
     console.log(`✅ Total ratings in database: ${ratingCount}\n`);
+    invalidateRecommendationCache();
 
     console.log('🎉 ========== DATA INITIALIZATION COMPLETE ==========');
     console.log(`📊 Final Stats:`);

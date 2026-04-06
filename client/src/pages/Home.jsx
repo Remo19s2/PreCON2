@@ -66,7 +66,7 @@ function Home() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold text-white mb-8 text-center">
-        Explore Indian Movies
+        Explore Movies on PreCON
       </h1>
 
       <div className="mb-8 flex flex-wrap gap-4 justify-center">

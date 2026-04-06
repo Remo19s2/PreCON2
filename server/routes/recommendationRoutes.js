@@ -5,35 +5,11 @@ const { getHybridRecommendations } = require('../services/recommendationService'
 router.get('/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const { limit = 10 } = req.query;
+    const limit = parseInt(req.query.limit, 10) || 10;
 
     console.log(`🎯 Fetching recommendations for userId: ${userId}`);
 
-    const User = require('../models/User');
-    const Movie = require('../models/Movie');
-    const Rating = require('../models/Rating');
-
-    const user = await User.findOne({ userId });
-    if (!user) {
-      console.log(`❌ User not found: ${userId}`);
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    const movieCount = await Movie.countDocuments();
-    const ratingCount = await Rating.countDocuments();
-
-    console.log(`📊 Database stats: ${movieCount} movies, ${ratingCount} ratings`);
-
-    if (movieCount === 0 || ratingCount === 0) {
-      return res.json({
-        userId,
-        recommendations: [],
-        message: 'No data available. Please ask admin to generate data.',
-        needsData: true
-      });
-    }
-
-    const recommendations = await getHybridRecommendations(userId, parseInt(limit));
+    const recommendations = await getHybridRecommendations(userId, limit);
 
     console.log(`✅ Generated ${recommendations.length} recommendations for ${userId}`);
 
@@ -50,6 +26,20 @@ router.get('/:userId', async (req, res) => {
       needsData: false
     });
   } catch (error) {
+    if (error.code === 'NO_RECOMMENDATION_DATA') {
+      return res.json({
+        userId: req.params.userId,
+        recommendations: [],
+        message: 'No data available. Please ask admin to generate data.',
+        needsData: true
+      });
+    }
+
+    if (error.message === 'User not found') {
+      console.log(`❌ User not found: ${req.params.userId}`);
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     console.error('❌ Error in recommendations:', error);
     res.status(500).json({ error: error.message });
   }

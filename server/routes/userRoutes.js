@@ -4,10 +4,11 @@ const User = require('../models/User');
 const Rating = require('../models/Rating');
 const { generateUsers, initializeData } = require('../utils/dataGenerator');
 const { isAdmin } = require('../middleware/authMiddleware');
+const { invalidateRecommendationCache } = require('../services/recommendationCache');
 
 router.get('/', isAdmin, async (req, res) => {
   try {
-    const users = await User.find().sort({ userId: 1 });
+    const users = await User.find().sort({ userId: 1 }).lean();
     res.json(users);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -36,6 +37,8 @@ router.post('/create', isAdmin, async (req, res) => {
       preferredLanguage,
       role: 'user'
     });
+
+    invalidateRecommendationCache();
     
     res.status(201).json({
       message: 'User created successfully',
@@ -54,7 +57,7 @@ router.post('/create', isAdmin, async (req, res) => {
 
 router.get('/:userId', async (req, res) => {
   try {
-    const user = await User.findOne({ userId: req.params.userId });
+    const user = await User.findOne({ userId: req.params.userId }).lean();
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -67,6 +70,7 @@ router.get('/:userId', async (req, res) => {
 router.get('/:userId/ratings', async (req, res) => {
   try {
     const ratings = await Rating.find({ userId: req.params.userId })
+      .lean()
       .populate('movieId');
     res.json(ratings);
   } catch (error) {
@@ -78,6 +82,7 @@ router.post('/generate', isAdmin, async (req, res) => {
   try {
     const { count = 100 } = req.body;
     await generateUsers(count);
+    invalidateRecommendationCache();
     res.json({ message: `Generated ${count} users successfully` });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -87,6 +92,7 @@ router.post('/generate', isAdmin, async (req, res) => {
 router.post('/initialize', async (req, res) => {
   try {
     await initializeData();
+    invalidateRecommendationCache();
     res.json({ message: 'Data initialization complete' });
   } catch (error) {
     res.status(500).json({ error: error.message });

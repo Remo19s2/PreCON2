@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Movie = require('../models/Movie');
 const { fetchAllIndianMovies } = require('../services/tmdbService');
+const { invalidateRecommendationCache } = require('../services/recommendationCache');
 
 router.get('/', async (req, res) => {
   try {
@@ -18,6 +19,7 @@ router.get('/', async (req, res) => {
     const skip = (page - 1) * limit;
 
     const movies = await Movie.find(query)
+      .lean()
       .skip(skip)
       .limit(parseInt(limit))
       .sort({ popularity: -1 });
@@ -61,15 +63,9 @@ router.get('/languages', async (req, res) => {
 
 router.get('/genres', async (req, res) => {
   try {
-    const allMovies = await Movie.find();
-    const genresSet = new Set();
-
-    allMovies.forEach(movie => {
-      movie.genres.forEach(genre => genresSet.add(genre));
-    });
-
-    const genres = Array.from(genresSet).sort();
-    res.json(genres);
+    const genres = await Movie.distinct('genres');
+    const uniqueGenres = [...new Set(genres.filter(Boolean))].sort();
+    res.json(uniqueGenres);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -96,6 +92,7 @@ router.post('/fetch', async (req, res) => {
       message: 'Movies fetched successfully',
       count: insertedMovies.length
     });
+    invalidateRecommendationCache();
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -103,7 +100,7 @@ router.post('/fetch', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const movie = await Movie.findById(req.params.id);
+    const movie = await Movie.findById(req.params.id).lean();
     if (!movie) {
       return res.status(404).json({ error: 'Movie not found' });
     }

@@ -30,5 +30,8 @@ const movieSchema = new mongoose.Schema({
 movieSchema.index({ tmdbId: 1 });
 movieSchema.index({ originalLanguage: 1 });
 movieSchema.index({ genres: 1 });
+movieSchema.index({ originalLanguage: 1, popularity: -1 });
+movieSchema.index({ genres: 1, popularity: -1 });
+movieSchema.index({ popularity: -1 });
 
 module.exports = mongoose.model('Movie', movieSchema);
